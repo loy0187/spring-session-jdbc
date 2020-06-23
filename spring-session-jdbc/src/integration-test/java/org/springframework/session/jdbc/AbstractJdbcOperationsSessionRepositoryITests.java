@@ -30,6 +30,7 @@ import org.junit.Test;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.jdbc.datasource.DataSourceTransactionManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -772,7 +773,7 @@ public abstract class AbstractJdbcOperationsSessionRepositoryITests {
 		assertThat(this.repository.findById(session.getId())).isNull();
 	}
 
-	@Test // gh-1031
+	@Test(expected = DataIntegrityViolationException.class) // gh-1031
 	public void saveDeletedAddAttribute() {
 		JdbcOperationsSessionRepository.JdbcSession session = this.repository
 				.createSession();
