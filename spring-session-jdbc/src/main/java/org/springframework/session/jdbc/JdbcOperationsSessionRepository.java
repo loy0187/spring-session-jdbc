@@ -40,6 +40,7 @@ import org.springframework.core.convert.support.GenericConversionService;
 import org.springframework.core.serializer.support.DeserializingConverter;
 import org.springframework.core.serializer.support.SerializingConverter;
 import org.springframework.dao.DataAccessException;
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.expression.Expression;
 import org.springframework.expression.spel.standard.SpelExpressionParser;
 import org.springframework.jdbc.core.BatchPreparedStatementSetter;
@@ -522,32 +523,24 @@ public class JdbcOperationsSessionRepository implements
 
 	private void insertSessionAttributes(JdbcSession session, List<String> attributeNames) {
 		Assert.notEmpty(attributeNames, "attributeNames must not be null or empty");
-		if (attributeNames.size() > 1) {
-			this.jdbcOperations.batchUpdate(this.createSessionAttributeQuery, new BatchPreparedStatementSetter() {
+		attributeNames.forEach(name -> {
+			byte[] value = serialize(session.getAttribute(name));
+			insertSessionAttribute(session.primaryKey, name, value);
+		});
+	}
 
-						@Override
-						public void setValues(PreparedStatement ps, int i) throws SQLException {
-							String attributeName = attributeNames.get(i);
-							ps.setString(1, session.primaryKey);
-							ps.setString(2, attributeName);
-							getLobHandler().getLobCreator().setBlobAsBytes(ps, 3, serialize(session.getAttribute(attributeName)));
-						}
-
-						@Override
-						public int getBatchSize() {
-							return attributeNames.size();
-						}
-
-			});
-		}
-		else {
+	private void insertSessionAttribute(String primaryKey, String name, byte[] value) {
+		try {
 			this.jdbcOperations.update(this.createSessionAttributeQuery, (ps) -> {
-				String attributeName = attributeNames.get(0);
-				ps.setString(1, session.primaryKey);
-				ps.setString(2, attributeName);
-				getLobHandler().getLobCreator().setBlobAsBytes(ps, 3,
-						serialize(session.getAttribute(attributeName)));
+				ps.setString(1, primaryKey);
+				ps.setString(2, name);
+				getLobHandler().getLobCreator().setBlobAsBytes(ps, 3, value);
 			});
+		} catch (DuplicateKeyException e) {
+			// do nothing when attribute already existing
+			if (logger.isDebugEnabled()) {
+				logger.debug(e.getMessage(), e);
+			}
 		}
 	}
 

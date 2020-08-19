@@ -67,9 +67,9 @@ public class JdbcOperationsSessionRepositoryTests {
 
 	private static final String SPRING_SECURITY_CONTEXT = "SPRING_SECURITY_CONTEXT";
 
-	private JdbcOperations jdbcOperations = mock(JdbcOperations.class);
+	private final JdbcOperations jdbcOperations = mock(JdbcOperations.class);
 
-	private PlatformTransactionManager transactionManager = mock(PlatformTransactionManager.class);
+	private final PlatformTransactionManager transactionManager = mock(PlatformTransactionManager.class);
 
 	private JdbcOperationsSessionRepository repository;
 
@@ -320,9 +320,9 @@ public class JdbcOperationsSessionRepositoryTests {
 		verify(this.jdbcOperations, times(1)).update(
 				startsWith("INSERT INTO SPRING_SESSION("),
 				isA(PreparedStatementSetter.class));
-		verify(this.jdbcOperations, times(1)).batchUpdate(
+		verify(this.jdbcOperations, times(2)).update(
 				startsWith("INSERT INTO SPRING_SESSION_ATTRIBUTES("),
-				isA(BatchPreparedStatementSetter.class));
+				isA(PreparedStatementSetter.class));
 		verifyZeroInteractions(this.jdbcOperations);
 	}
 
@@ -353,9 +353,9 @@ public class JdbcOperationsSessionRepositoryTests {
 
 		assertThat(session.isNew()).isFalse();
 		assertPropagationRequiresNew();
-		verify(this.jdbcOperations, times(1)).batchUpdate(
+		verify(this.jdbcOperations, times(2)).update(
 				startsWith("INSERT INTO SPRING_SESSION_ATTRIBUTES("),
-				isA(BatchPreparedStatementSetter.class));
+				isA(PreparedStatementSetter.class));
 		verifyZeroInteractions(this.jdbcOperations);
 	}
 
